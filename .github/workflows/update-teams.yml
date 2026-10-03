@@ -1,0 +1,47 @@
+name: Update team roster
+
+on:
+  schedule:
+    - cron: "23 4 * * 1" # Mondays, 04:23 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/scripts/render_teams.py
+      - .github/workflows/update-teams.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-teams
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.TEAMS_APP_ID }}
+          private-key: ${{ secrets.TEAMS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-members: read
+
+      - name: Render team roster
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: python3 .github/scripts/render_teams.py --show-private-count
+
+      - name: Commit changes
+        run: |
+          git diff --quiet -- profile/README.md && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add profile/README.md
+          git commit -m "Update team roster"
+          git push

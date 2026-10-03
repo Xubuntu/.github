@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# GitHub App private keys and local env files
+*.pem
+.env
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
